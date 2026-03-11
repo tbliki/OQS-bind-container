@@ -42,7 +42,8 @@ RUN apt-get install -y libgmp-dev
 
 RUN git clone https://github.com/open-quantum-safe/liboqs
 RUN git clone https://github.com/SIDN/oqs-provider
-RUN git clone https://github.com/SIDN/OQS-bind.git
+# Cloning personal repository with SNOVA implementation:
+RUN git clone https://github.com/tbliki/OQS-bind.git
 
 # Build liboqs and install in /app/liboqs-bin
 
@@ -53,7 +54,8 @@ RUN cmake -S liboqs -B liboqs/build -DBUILD_SHARED_LIBS=ON
 RUN cmake --build liboqs/build --parallel $(nproc)
 RUN CMAKE_INSTALL_PREFIX=${DESTDIR} cmake --build liboqs/build --target install
 # Basic sanity test to verify if algorithm's integration in liboqs works
-RUN ./liboqs/build/tests/test_sig SQIsign-lvl1
+# Commented out as the SNOVA branch does not implement SQIsign
+# RUN ./liboqs/build/tests/test_sig SQIsign-lvl1
 
 # Build liboqs to /app/oqsprovider-bin
 RUN cd oqs-provider && git checkout 6d87d2994fada77f0e3408e0baf357b89932d149 # wip-sqisign
@@ -61,7 +63,8 @@ RUN cd oqs-provider && liboqs_DIR=$DESTDIR/usr/local/lib/cmake/liboqs/ CFLAGS=-I
 RUN cd oqs-provider && cmake --build _build
 RUN cd oqs-provider && CMAKE_INSTALL_PREFIX=${DESTDIR} cmake --install _build
 
-RUN cd OQS-bind && git checkout bded5721f0b2929d875f57c756abbca4b357c097 # sidnlabs-pqc
+# Also removed: This SNOVA branch does not have an SQI-sign implementation
+# RUN cd OQS-bind && git checkout bded5721f0b2929d875f57c756abbca4b357c097 # sidnlabs-pqc
 ENV LD_LIBRARY_PATH=/dist/usr/local/lib
 ADD patches/falcon-unpadded.patch /OQS-bind/falcon-unpadded.patch
 RUN cd OQS-bind && git apply  --ignore-space-change --ignore-whitespace falcon-unpadded.patch
@@ -81,6 +84,11 @@ FROM ubuntu:${UBUNTU_VERSION} as production
 COPY --from=build /dist /
 
 RUN apt-get update -y && apt-get upgrade -y && apt-get install -y libuv1-dev liburcu-dev && rm -rf /var/lib/apt/lists/*
+
+# Re-added openssl configuration as bind does not seem to load the provider otherwise
+ADD pqc-openssl.cnf /opt/pqc-openssl.cnf
+ENV OPENSSL_CONF=/opt/pqc-openssl.cnf
+ENV OPENSSL_MODULES=/usr/lib/x86_64-linux-gnu/ossl-modules
 
 RUN mkdir /var/cache/bind
 ADD named.conf /usr/local/etc/named.conf
