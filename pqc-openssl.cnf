@@ -10,7 +10,7 @@ oqsprovider = liboqs_provider
 
 [liboqs_provider]
 activate = 1
-module = /opt/openssl/lib/ossl-modules/oqsprovider.so
+module = /usr/lib/x86_64-linux-gnu/ossl-modules/oqsprovider.so
 
 [default_sect]
 activate = 1
