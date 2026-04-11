@@ -80,15 +80,6 @@ zone "example.nl" IN {
 };
 EOF
 
-# Create the standalone trust anchor file for delv. 
-# Make sure to replace the <KeyTag> and <Hash> values with your specific keys from dsrecord.txt
-cat <<EOF > trust.key
-trust-anchors {
-    "example.nl" static-ds <KeyTag> 247 2 "<Hash>";
-    "example.nl" static-ds <KeyTag> 248 2 "<Hash>";
-};
-EOF
-
 # Run the container in the background
 podman run -d --replace --name pqc-validator \
   -v $(pwd):/dns \
